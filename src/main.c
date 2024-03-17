@@ -1,114 +1,61 @@
 #include <stdio.h>
-#define m 5
-#define n 5
-#define MAX 100
+#include <stdlib.h>
 
-struct stype
-{
-	int x, y, pre;
-} queue[MAX];
+#define CHUNK_SIZE 1024
 
-int maze[m + 2][n + 2] = {
-	{2, 2, 2, 2, 2, 2, 2},
-	{2, 0, 0, 1, 0, 1, 2},
-	{2, 1, 0, 1, 1, 1, 2},
-	{2, 1, 0, 0, 0, 1, 2},
-	{2, 0, 0, 1, 0, 0, 2},
-	{2, 0, 1, 1, 1, 0, 2},
-	{2, 2, 2, 2, 2, 2, 2}};
+void processChunk(char *chunk, size_t chunkSize, char *partialValue, size_t *partialSize) {
+    size_t i = 0;
+    char value[CHUNK_SIZE + 1];
 
-int zx[5] = {0, 0, 0, 1, -1};
-int zy[5] = {0, -1, 1, 0, 0};
+    if (partialValue != NULL) {
+        // Copy the partial value to the value buffer
+        size_t partialLength = *partialSize;
+        for (size_t j = 0; j < partialLength; j++) {
+            value[i++] = partialValue[j];
+        }
+        *partialSize = 0;
+    }
 
-void print(int rear)
-{
-	int i = rear;
-	int j;
-	do
-	{
-		j = i;
-		i = queue[i].pre;
-		queue[j].pre = -1;
-	} while (i != 0);
-	printf("The path is:\nEntrance->\n\t");
-	i = 0;
-	while (i <= rear)
-	{
-		if (queue[i].pre == -1)
-		{
-			printf("(%d, %d)->", queue[i].x, queue[i].y);
-			if ((i % 5) == 0)
-			{
-				printf("\n");
-				printf("\t");
-			}
-		}
-		i++;
-	}
-	printf("Exit");
-};
+    for (; i < chunkSize; i++) {
+        char c = chunk[i];
+        if (c == ',') {
+            // Print the value
+            value[i] = '\0';
+            printf("%s\n", value);
+            i++;
+            break;
+        }
+        value[i] = c;
+    }
 
-int main()
-{
-	int rear, front;
-	int find = 0;
-	int x, y;
-	int v;
+    // Copy the partial value from the current chunk
+    for (; i < chunkSize; i++) {
+        char c = chunk[i];
+        if (c == ',' || c == '\n') {
+            *partialSize = 0;
+            break;
+        }
+        partialValue[*partialSize] = c;
+        (*partialSize)++;
+    }
+}
 
-	int i, j;
-	for (i = 0; i < m + 2; i++)
-	{
-		for (j = 0; j < n + 2; j++)
-		{
-			int value = maze[i][j];
-			if (value != 2)
-			{
-				printf("%d ", value);
-			}
-			else
-			{
-				printf("* ");
-			}
-		}
-		printf("\n");
-	}
+int main() {
+    FILE *file = fopen("data.csv", "r");
+    if (file == NULL) {
+        printf("Failed to open the file.\n");
+        return 1;
+    }
 
-	queue[1].x = 1;
-	queue[1].y = 1;
-	queue[1].pre = 0;
-	front = 1;
-	rear = 1;
-	maze[1][1] = -1;
-	while ((front <= rear) && !find)
-	{
-		x = queue[front].x;
-		y = queue[front].y;
+    char chunk[CHUNK_SIZE];
+    char partialValue[CHUNK_SIZE];
+    size_t partialSize = 0;
+    size_t bytesRead;
 
-		for (v = 1; v <= 4; v++)
-		{
-			i = x + zx[v];
-			j = y + zy[v];
-			if (maze[i][j] == 0)
-			{
-				rear++;
-				queue[rear].x = i;
-				queue[rear].y = j;
-				queue[rear].pre = front;
+    while ((bytesRead = fread(chunk, sizeof(char), CHUNK_SIZE, file)) > 0) {
+        processChunk(chunk, bytesRead, partialValue, &partialSize);
+    }
 
-				maze[i][j] = -1;
-			}
-			if ((i == m) && (j == n))
-			{
-				find = 1;
-				print(rear);
-			}
-		}
-		front++;
-	}
-	
-	if (!find)
-		printf("Cannot find it");
-
-	getchar();
-	return 0;
+    fclose(file);
+    return 0;
 }
