@@ -16,16 +16,20 @@ int main() {
     char value[CHUNK_SIZE + 1];
     size_t value_idx = 0;
 
+    
     while ((bytesRead = fread(chunk, sizeof(char), CHUNK_SIZE, file)) > 0) {
         for (int i = 0; i < bytesRead; i++) {
             char c = chunk[i];
-            if (c == ',') {
+            
+            if (c == 0x0A && (i > 0 && chunk[i - 1] == 0x0D)) {
                 // Print the value
                 value[value_idx++] = '\0';
                 printf("%s\n", value);
                 value_idx = 0;
             } else {
-                value[value_idx++] = c;
+                if (c != 0x0D) {
+                    value[value_idx++] = c;
+                }
             }
         }
     }
