@@ -21,15 +21,13 @@ int main() {
         for (int i = 0; i < bytesRead; i++) {
             char c = chunk[i];
             
-            if (c == 0x0A && (i > 0 && chunk[i - 1] == 0x0D)) {
+            if (c == '\n') {
                 // Print the value
                 value[value_idx++] = '\0';
                 printf("%s\n", value);
                 value_idx = 0;
             } else {
-                if (c != 0x0D) {
-                    value[value_idx++] = c;
-                }
+                value[value_idx++] = c;
             }
         }
     }
